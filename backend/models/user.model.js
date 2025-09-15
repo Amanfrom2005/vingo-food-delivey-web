@@ -5,7 +5,10 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String },
     mobile: { type: String, required: true },
-    role: { type: String, enum: ['user', 'owner', 'deliveryBoy'], required: true }
+    role: { type: String, enum: ['user', 'owner', 'deliveryBoy'], required: true },
+    resetOtp: { type: String },
+    isOtpVerified: { type: Boolean, default: false },
+    otpExpiry: { type: Date },
 }, {timestamps: true});
 
 const User = mongoose.model("User", userSchema);
