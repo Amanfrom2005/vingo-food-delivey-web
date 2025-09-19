@@ -7,17 +7,23 @@ import { serverUrl } from "../App";
 import { useToast } from "../context/ToastContext";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../../firebase";
+import { ClipLoader } from "react-spinners";
+import { useDispatch } from "react-redux";
+import {setUserData} from "../redux/userSlice.js"
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("user");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("user");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const handleSignUp = async (e) => {
+    setLoading(true)
     e.preventDefault();
     try {
       const result = await axios.post(
@@ -25,18 +31,32 @@ const SignUp = () => {
         { fullName, email, mobile, password, role },
         { withCredentials: true }
       );
-      console.log(result);
+      dispatch(setUserData(result.data))
+      setLoading(false)
       showToast("Account created successfully!", "success");
     } catch (error) {
       console.log(error);
       showToast(error?.response?.data?.message || "Sign up failed", "error");
+      setLoading(false)
     }
   };
 
   const handleGoogleAuth = async () => {
+    if(!mobile){showToast("mobile number is requird", "error");}
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
-    console.log(result);
+    try {
+      const {data} = await axios.post(`${serverUrl}/api/auth/google-auth`, {
+        fullName: result.user.displayName,
+        email: result.user.email,
+        role,
+        mobile
+      }, {withCredentials: true})
+      dispatch(setUserData(data.data))
+    } catch (error) {
+      console.log(error);
+      showToast(error?.response?.data?.message || "Google auth failed failed", "error");
+    }
   }
 
   return (
@@ -162,8 +182,9 @@ const SignUp = () => {
           <button
             className="w-full bg-[#ff4d2d] text-white hover:bg-[#e64323] active:scale-98 font-bold mt-4 flex items-center justify-center gap-2 border-none rounded-lg px-4 py-2 transition-all duration-200 shadow hover:shadow-lg"
             type="submit"
+            disabled={loading}
           >
-            Sign Up
+            {loading? <ClipLoader color="white" size={24} /> : "Sign Up"}
           </button>
         </form>
 

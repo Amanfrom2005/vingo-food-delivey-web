@@ -5,6 +5,11 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { useToast } from "../context/ToastContext";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../../firebase";
+import { ClipLoader } from "react-spinners";
+import { useDispatch } from "react-redux";
+import {setUserData} from "../redux/userSlice.js"
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,22 +17,42 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+
 
   const handleSignIn = async (e) => {
-    e.preventDefault(); // prevent page reload on submit
+    setLoading(true);
+    e.preventDefault();
     try {
       const result = await axios.post(
         `${serverUrl}/api/auth/signin`,
         { email, password },
         { withCredentials: true }
       );
-      console.log(result);
+      dispatch(setUserData(result.data))
+      setLoading(false);
       showToast("Login successful!", "success");
       navigate("/");
     } catch (err) {
       showToast(err?.response?.data?.message || "Sign in error", "error");
+      setLoading(false);
     }
   };
+
+  const handleGoogleAuth = async () => {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      try {
+        const {data} = await axios.post(`${serverUrl}/api/auth/google-auth`, {
+          email: result.user.email
+        }, {withCredentials: true})
+      dispatch(setUserData(data.data))
+      } catch (error) {
+        console.log(error);
+        showToast(error?.response?.data?.message || "Google auth failed failed", "error");
+      }
+    }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-[#fff9f6] to-[#ffe4df]">
@@ -82,14 +107,16 @@ const SignIn = () => {
           <button
             type="submit"
             className="w-full bg-[#ff4d2d] text-white hover:bg-[#e64323] active:scale-98 font-bold mt-4 flex items-center justify-center gap-2 border-none rounded-lg px-4 py-2 transition-all duration-200 shadow hover:shadow-lg"
+            disabled={loading}
           >
-            Sign In
+            {loading? <ClipLoader color="white" size={24} /> : "Sign Up"}
           </button>
         </form>
 
         <button
           type="button"
           className="w-full mt-4 flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+          onClick={handleGoogleAuth}
         >
           <FcGoogle size={20} />
           <span>Sign in with Google</span>

@@ -122,3 +122,17 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: `Password reset error ${error.message}` });
   }
 };
+
+export const gooogleAuth = async (req, res) => {
+  try {
+    const {fullName, email, mobile, role} = req.body;
+    let user = await User.findOne({email});
+    if(!user){user = await User.create(fullName, email, mobile, role)};
+    const token = genToken(user._id);
+    res.cookie("token", token, cookieOpts);
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    return res.status(500).json({ message: `googleAuth error ${error.message}` }); 
+  }
+}
