@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { useToast } from "../context/ToastContext";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../../firebase";
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +32,12 @@ const SignUp = () => {
       showToast(error?.response?.data?.message || "Sign up failed", "error");
     }
   };
+
+  const handleGoogleAuth = async () => {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    console.log(result);
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-[#fff9f6] to-[#ffe4df]">
@@ -162,6 +170,7 @@ const SignUp = () => {
         <button
           className="w-full mt-4 flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 font-medium transition-all duration-200 shadow-sm hover:shadow-lg"
           type="button"
+          onClick={handleGoogleAuth}
         >
           <FcGoogle size={20} />
           <span>Sign up with Google</span>
